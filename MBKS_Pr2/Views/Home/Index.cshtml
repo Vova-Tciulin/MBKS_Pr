@@ -1,0 +1,186 @@
+﻿@model UserVm
+@{
+    ViewData["Title"] = "Главная страница";
+}
+
+
+    
+   
+    <div class="container-sm border rounded-3 py-4">
+        <h3 class="">Добавление пользователя.</h3>
+        <div class="row">
+            <div class="col-md-2">
+                <h4>Имя:</h4>
+            </div>
+            <div class="col-md-2">
+                <input id="userName" class="form-control" type="text">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+                <h4>Символы:</h4>
+            </div>
+            <div class="col-md-2">
+                <input id="symbols" class="form-control" type="text">
+            </div>
+        </div>
+        <div>
+            <button onclick="createUser()" class="btn btn-primary">Добавить</button>
+        </div>
+    </div>
+    
+<div class="container-fluid  mt-lg-5 p-0">
+    <h1 class="text-center">Матрица доступа</h1>
+    <table class="table table-striped table-bordered mt-3">
+        <thead>
+        <tr>
+            <th class="col-md-1">Пользователь</th>
+            @for (int i = 1; i < 16; i++)
+            {
+                <th class="col-md-1 text-center">S_@i</th>
+            }
+            <th class="col-md-1 text-center"></th>
+        </tr>
+        </thead>
+        <tbody id="tbody">
+        @foreach (var user in Model.Users)
+        {
+            <tr id="tr_@user.Id">
+                <td>@user.Name</td>
+                @for (int i = 0; i < 15; i++)
+                {
+                    if (i >= user.Symbols.Count())
+                    {
+                        <td>
+                            <div>
+                                <div class="text-center my-2">
+                                    <input id="@(i.ToString() + "-" + @user.Id)" class="form-control text-center"/>
+                                </div>
+                                <div class="">
+                                    <button class="btn btn-primary" onclick="changeSymbol('@user.Id','@(i.ToString() + "-" + @user.Id)')">изм.</button>
+                                </div>
+                            </div>
+        
+                        </td>
+        
+                    }
+                    else
+                    {
+                        <td>
+                            <div >
+                                <div class="text-center my-2">
+                                    <input id="@user.Symbols[i].Id" class="form-control text-center" value="@user.Symbols[i].S"/>
+                                </div>
+                                <div class="">
+                                    <button class="btn btn-primary " onclick="changeSymbol('@user.Id','@user.Symbols[i].Id')">изм.</button>
+                                </div>
+                            </div>
+                        </td>
+                    }
+                }
+                <td>
+                    <button class="btn btn-danger " onclick="deleteUser('@user.Id')">-</button>
+                </td>
+            </tr>
+        
+        }
+        </tbody>
+    </table>
+</div>
+
+    
+
+<script >
+    async function changeSymbol(userId,sId){
+        var value=document.getElementById(sId).value;
+        
+        const response=await fetch("Home/ChangeSymbol/",{
+            method:"POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({
+                sId: sId,
+                userId: userId,
+                value: value 
+            })
+        }); 
+    }
+    
+    async function deleteUser(userId){
+           
+            const response=await fetch("Home/DeleteUser/",{
+                method:"DELETE",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: userId
+                })
+            }); 
+            if (response.ok==true){
+                const rowId="tr_"+userId;
+                const table=document.getElementById("tbody");
+                const row=document.getElementById(rowId);
+                table.removeChild(row);
+            }
+        }
+    
+    async function createUser(){
+               
+        var userName=document.getElementById('userName').value;
+        var symbols=document.getElementById('symbols').value;
+        const response=await fetch("Home/CreateUser/",{
+            method:"POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({
+                name: userName,
+                symbols: symbols
+            })
+        }); 
+        
+        if (response.ok) {
+           
+            const user = await response.json(); 
+            
+            console.log(user);
+            const table = document.getElementById("tbody");
+            const newRow = document.createElement("tr");
+            newRow.id = "tr_" + user.Id;
+            
+          
+            const nameCell = document.createElement("td");
+            nameCell.textContent = user.name;
+            newRow.appendChild(nameCell);
+            
+            for (let i = 0; i < 15; i++) {
+                const cell = document.createElement("td");
+                const symbol = user.symbols.length > i ? user.symbols[i].s : ''; 
+                cell.innerHTML = `
+                    <div>
+                        <div class="text-center my-2">
+                            <input id="${i}-${user.id}" class="form-control text-center" value="${symbol}" />
+                        </div>
+                        <div>
+                            <button class="btn btn-primary" onclick="changeSymbol('${user.id}','${i}-${user.id}')">изм.</button>
+                        </div>
+                    </div>
+                `;
+                newRow.appendChild(cell);
+            }
+    
+            const deleteCell = document.createElement("td");
+            deleteCell.innerHTML = `
+                <button class="btn btn-danger" onclick="deleteUser('${user.id}')">-</button>
+            `;
+            newRow.appendChild(deleteCell);
+    
+            table.appendChild(newRow);
+            
+        
+            document.getElementById('userName').value = '';
+            document.getElementById('symbols').value = '';
+        }
+          
+         
+                                  
+                                  
+    }
+            
+</script>

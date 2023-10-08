@@ -1,0 +1,77 @@
+﻿<div class="container">
+    <h1>Отправка и отображение сообщений</h1>
+        
+    <div class="mb-3">
+        <textarea id="messageInput" class="form-control" placeholder="Введите текст сообщения"></textarea>
+    </div>
+        
+    <div class="mb-3">
+        <button id="sendMessageButton" class="btn btn-primary">Отправить</button>
+    </div>
+
+    <div id="messageContainer">
+        <!-- Здесь будет отображаться список сообщений -->
+    </div>
+</div>
+
+<script>
+        document.getElementById("sendMessageButton").addEventListener("click", sendMessage);
+
+        async function sendMessage() {
+            const messageInput = document.getElementById("messageInput");
+            const message = messageInput.value;
+
+            if (message.trim() === "") {
+                alert("Введите текст сообщения");
+                return;
+            }
+
+            const response = await fetch("Message/GetText/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: message })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                displayMessages(data,messageInput.value);
+                messageInput.value = "";
+            } else {
+                alert("Ошибка при отправке сообщения");
+            }
+        }
+
+        function displayMessages(messages,text) {
+            const messageContainer = document.getElementById("messageContainer");
+            messageContainer.innerHTML = "";
+
+            const messageElement = document.createElement("div");
+            const textElement = document.createElement("div");
+            textElement.textContent = `Исходный текст: ${text}`;
+            messageElement.appendChild(textElement);
+            const endElement = document.createElement("div");
+            endElement.textContent = `------------------------------`;
+            messageElement.appendChild(endElement);
+            messages.forEach(message => {
+                    
+           
+                    const userElement = document.createElement("div");
+                    userElement.textContent = `${message.user}`;
+                    messageElement.appendChild(userElement);
+                    
+                     const symbolElement = document.createElement("div");
+                    symbolElement.textContent = `Доступные символы: ${message.symbols}`;
+                    messageElement.appendChild(symbolElement);
+            
+                    const textElement = document.createElement("div");
+                    textElement.textContent = `Сообщение: ${message.text}`;
+                    messageElement.appendChild(textElement);
+                    
+                    const endElement = document.createElement("div");
+                    endElement.textContent = `------------------------------`;
+                    messageElement.appendChild(endElement);
+            
+                    messageContainer.appendChild(messageElement);
+                });
+        }
+    </script>
